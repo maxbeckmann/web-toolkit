@@ -1,5 +1,0 @@
-requests
-jsonpath-ng
-yarl
-beautifulsoup4
-lxml

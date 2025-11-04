@@ -1,39 +1,70 @@
-To use this for an engagement, 
-- create an engagement poetry project, 
-- clone this repository next to the engagement project folder and
-- add the cloned repo as dependency. 
+webtoolkit
+==========
 
-This boils down to:
+``webtoolkit`` lets you treat HTTP requests and responses as structured Python
+classes. Describe a raw HTTP exchange inside a docstring, declare arguments for
+the dynamic portions, and the package handles formatting, mutation, and
+response parsing for you.
+
+Installation
+------------
+
+The project uses a standard ``src`` layout and ships with a ``pyproject.toml``.
+You can install it in editable mode while developing:
+
 ```
-poetry new engagement
-git clone git@github.geo.conti.de:uig55702/web-toolkit.git
-cd engagement
-poetry add --editable ../web-toolkit
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
 
-Now you can use the `web-toolkit`, make changes to it and eventually commit them back. 
+After installation the ``webtoolkit`` package becomes importable and a
+``webtoolkit-example`` console script is available.
 
-To create a request to google.com you may do:
-```
-from web import Request, RequestParameter
+Quick start
+-----------
 
-class InitialRequest(Request):
+Create a request/response pair by subclassing :class:`webtoolkit.Request`:
+
+```python
+from webtoolkit import JsonBodyValue, Request
+
+
+class Login(Request):
     """
-    GET / HTTP/1.1
-    Host: google.com
-    Sec-Ch-Ua: "Not/A)Brand";v="8", "Chromium";v="126"
-    Sec-Ch-Ua-Mobile: ?0
-    Sec-Ch-Ua-Platform: "Windows"
-    Accept-Language: de-DE
-    Upgrade-Insecure-Requests: 1
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.127 Safari/537.36
-    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
-    Sec-Fetch-Site: none
-    Sec-Fetch-Mode: navigate
-    Sec-Fetch-User: ?1
-    Sec-Fetch-Dest: document
-    Accept-Encoding: gzip, deflate, br
-    Priority: u=0, i
-    Connection: keep-alive
+    POST /login HTTP/1.1
+    Host: example.com
+    Content-Type: application/json
+
+    {"username": "demo@example.com", "password": "hunter2"}
     """
+
+    username = JsonBodyValue("$.username")
+
+    class Response(Request.Response):
+        token = JsonBodyValue("$.token")
+```
+
+Pass overrides while instantiating the request, inspect the actual HTTP message
+that will be sent, and parse the resulting response:
+
+```python
+login = Login(username="alice@example.com")
+prepared = login.prepare()
+login.apply_arguments(prepared)
+from webtoolkit import format_request  # fan-out helpers
+print("\n".join(format_request(prepared)))  # doctest: +SKIP
+
+response = login.send()
+print(response.token)
+```
+
+Examples
+--------
+
+Run the packaged demo for a guided tour that does not require network access:
+
+```
+python -m webtoolkit
+# or
+webtoolkit-example
 ```
